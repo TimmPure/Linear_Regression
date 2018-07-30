@@ -7,6 +7,16 @@ public class Listener : MonoBehaviour
 
     public Transform pointParent;
     public GameObject pointPrefab;
+    private List<Vector2> dataSet;
+
+    private void Start()
+    {
+        dataSet = GameObject.FindObjectOfType<Regressor>().dataSet;
+        if (dataSet == null)
+        {
+            Debug.LogError("Could not find Regressor!");
+        }
+    }
 
     void Update()
     {
@@ -16,10 +26,11 @@ public class Listener : MonoBehaviour
             if (Mathf.Abs(clickPos.y) <= 10f && Mathf.Abs(clickPos.x) <= 10f)
             {
                 Instantiate(pointPrefab, clickPos, Quaternion.identity, pointParent);
+                dataSet.Add(clickPos);
             }
             else
             {
-                Debug.Log("Clicked outside the counding box");
+                Debug.Log("Clicked outside the bounding box");
             }
         }
     }
