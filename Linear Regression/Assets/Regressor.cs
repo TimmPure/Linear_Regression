@@ -7,17 +7,26 @@ public class Regressor : MonoBehaviour {
     public List<Vector2> dataSet;
     public float m = 0f;
     public float b = 0f;
-    public float xBar = 0f;
-    public float yBar = 0f;
+    public float m_hat = 0f;
+    public float b_hat = 0f;
+    public float x_bar = 0f;
+    public float y_bar = 0f;
     public float nom = 0f;
     public float den = 0f;
-    private LineRenderer lr;
+    public float learningRate = .01f;
+    private LineRenderer OLSLine;
+    private LineRenderer gradientLine;
     private TextUpdate text; 
 
 	void Start () {
         dataSet = new List<Vector2>();
-        lr = GetComponent<LineRenderer>();
-        if(lr == null)
+        OLSLine = GetComponent<LineRenderer>();
+        if(OLSLine == null)
+        {
+            Debug.LogError("Could not find LineRenderer on " + this);
+        }
+        gradientLine = GameObject.FindGameObjectWithTag("GradientLine").GetComponent<LineRenderer>();
+        if (OLSLine == null)
         {
             Debug.LogError("Could not find LineRenderer on " + this);
         }
@@ -28,7 +37,7 @@ public class Regressor : MonoBehaviour {
         }
     }
 
-    public void Regress()
+    public void LeastSquares()
     {
         //Can't correlate with only a single datapoint
         if (dataSet.Count <= 1)
@@ -41,21 +50,44 @@ public class Regressor : MonoBehaviour {
         b = 0f;
         nom = 0f;
         den = 0f;
-        float xBar = XBar();
-        float yBar = YBar();
+        x_bar = XBar();
+        y_bar = YBar();
 
         //Calculate nominator and denominator for m
         for (int i = 0; i < dataSet.Count; i++)
         {
-            nom += (dataSet[i].x - xBar) * (dataSet[i].y - yBar);
-            den += Mathf.Pow((dataSet[i].x - xBar), 2);
+            nom += (dataSet[i].x - x_bar) * (dataSet[i].y - y_bar);
+            den += Mathf.Pow((dataSet[i].x - x_bar), 2);
         }
 
         m = nom / den;
-        b = yBar - m * xBar;
+        b = y_bar - m * x_bar;
 
-        DrawRegression();
+        DrawOLS();
         text.UpdateText(m, b);
+    }
+
+    public void GradientDescent()
+    {
+        //Can't correlate with only a single datapoint
+        if (dataSet.Count <= 1)
+        {
+            return;
+        }
+
+        for (int i = 0; i < dataSet.Count; i++)
+        {
+            float x = dataSet[i].x;
+            float y = dataSet[i].y;
+            float y_hat = m_hat * x + b_hat;
+            float error = y - y_hat;
+
+            m_hat += error * x * learningRate;
+            b_hat += error * learningRate;
+        }
+        Debug.Log("m_hat is " + m_hat + ", b_hat = " + b_hat);
+
+        DrawGradientLine();
     }
 
     public float XBar()
@@ -78,10 +110,17 @@ public class Regressor : MonoBehaviour {
         return sum / dataSet.Count;
     }
 
-    public void DrawRegression()
+    public void DrawOLS()
     {
-        lr.enabled = true;
+        OLSLine.enabled = true;
         Vector3[] positions = new Vector3[2] { new Vector2(-10, -10 * m + b), new Vector2(10, 10 * m + b) };
-        GetComponent<LineRenderer>().SetPositions(positions);
+        OLSLine.SetPositions(positions);
+    }
+
+    public void DrawGradientLine()
+    {
+        gradientLine.enabled = true;
+        Vector3[] positions = new Vector3[2] { new Vector2(-10, -10 * m_hat + b_hat), new Vector2(10, 10 * m_hat + b_hat) };
+        gradientLine.SetPositions(positions);
     }
 }

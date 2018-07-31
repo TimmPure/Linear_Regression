@@ -33,7 +33,8 @@ public class Listener : MonoBehaviour
             {
                 Instantiate(pointPrefab, clickPos, Quaternion.identity, pointParent);
                 dataSet.Add(clickPos);
-                regressor.Regress();
+                regressor.LeastSquares();
+                regressor.GradientDescent();
             } else
             {
                 Debug.Log("Clicked outside the bounding box");
